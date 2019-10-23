@@ -1,0 +1,209 @@
+<html>
+  <style>
+    html{
+      background-color: rgb(96, 228, 240);
+      font-family: 'Segoe UI';
+    }
+    ul{
+      list-style-type: none;
+      padding-left: 0;
+
+    }
+    .msg-username{
+      font-weight: bold;
+      color: red;
+    }
+    .msg-time{
+      font-weight: lighter;
+      font-style: italic;
+      font-size: 12px;
+    }
+    .typing-div{
+      font-size: 8px;
+    }
+    .current-users{
+      position: fixed;
+      float: right;
+    }
+    
+  </style>
+  <!--<head>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    function init(){
+      handleTextInput();
+      preventEnterRefresh();
+    }
+  </script>
+
+  <script>
+    function getNumberOfOnlineUsers(){
+      let num = document.getElementById("current-users").getElementsByTagName("li").length;
+      console.log(document.getElementById("current-users").getElementsByTagName("li"))
+      document.getElementById("current-users-onlineusers").innerHTML = "Online Users (" + num/2 + ")";
+    }
+  </script>
+
+  <script>
+    function preventEnterRefresh(){
+      document.getElementById("chat-form").addEventListener("submit", (e)=>{
+        e.preventDefault();
+      })
+    }
+  </script>
+  <!--
+  <script>
+      function test(){
+        if(!socket){
+          let socket = io();
+        }
+        document.getElementById("chat-form").addEventListener("submit", (e) =>{
+          e.preventDefault();
+          socket.emit("chat message", document.getElementById("chattextbox").value);
+          console.log(document.getElementById("chattextbox").value);
+          document.getElementById("chattextbox").value = ""
+          return false;
+      })
+    }
+  </script>
+  -->
+  <script>
+      function msgSubmit(){
+        if(document.getElementById("chattextbox").value===""){
+          return;
+        }
+        
+        if(!socket){
+          let socket = io();
+        }
+          socket.emit("chat message", document.getElementById("chattextbox").value);
+          console.log(document.getElementById("chattextbox").value);
+          document.getElementById("chattextbox").value = ""
+    }
+  </script>
+
+  <script>
+    function handleTextInput(){ //this creates multiple listeners, fix this 
+      var typingTimer;
+      if(!socket){
+          let socket = io();
+      }
+      document.getElementById("chattextbox").addEventListener("keyup", ()=>{
+        clearTimeout(typingTimer)
+        socket.emit("typing");
+        typingTimer = setTimeout(()=>{
+          socket.emit("not typing");
+        }, 5000)
+      })
+      
+    }
+  </script>
+
+  <!--
+    code for adding messages to ul
+  -->
+  <script>
+    let socket = io();
+    let socketString = "";
+    socket.on("chat message", function(msg, socketID) {
+      let ul = document.getElementById("messages");
+      let li = document.createElement("li");
+      let currentTime = new Date().toLocaleTimeString();
+      console.log(currentTime);
+      li.innerHTML += "<li><span class=\"msg-time\">" + currentTime + " </span></br><span class=\"msg-username\">" + socketID +":</span><span class=\"msg-msg\"> " + msg + "</span></li>"
+      //li.append(socketID + ": ");
+      //li.append(msg);
+      //li.style.cssText use a ternary operator or something to alternate this between two different colors
+      // work on the rest of the css tmrw
+      ul.appendChild(li);
+    });
+    
+    socket.on("typing", function(socketID, currentTypers){
+      // loop through currentTypers array, but fix the multiple listener issue beforehand
+      /*if(!socketString.includes(socketID)){
+        for(let i = 0; i<currentTypers.length; i++){
+          if(i === currentTypers.length-1) {
+            if(currentTypers.length > 1){
+              socketString = socketString.concat("and ", currentTypers[i]);
+            }else{
+              socketString = currentTypers[i];
+            }
+          }else{
+            socketString = socketString.concat(currentTypers[i], ", "); 
+          }
+          console.log(currentTypers)
+        }
+      }*/
+      if(!socketString.includes(socketID)){
+        if(currentTypers.length > 1){
+          socketString = socketString.concat(", ", socketID); // find a way to add "and" case
+        }else{
+          socketString = socketID;
+        }
+        console.log(currentTypers);
+      }
+      
+      if(currentTypers.length===0){
+        document.getElementById("typing-div").innerHTML = "";  
+      }else if(currentTypers.length >1){
+        document.getElementById("typing-div").innerHTML = socketString + " are typing...";
+      }else{
+        document.getElementById("typing-div").innerHTML = socketString + " is typing...";
+      }  
+    });
+
+    socket.on("not typing", (socketID, currentTypers) =>{
+      socketString = ""
+      if(!socketString.includes(socketID)){
+        if(currentTypers.length > 1){
+          socketString = socketString.concat(", ", socketID);
+        }else{
+          socketString = socketID;
+        }
+        console.log(currentTypers);
+      }
+
+      if(currentTypers.length===0){
+        document.getElementById("typing-div").innerHTML = "";  
+      }else if(currentTypers.length >1){
+        document.getElementById("typing-div").innerHTML = socketString + " are typing...";
+      }else{
+        document.getElementById("typing-div").innerHTML = socketString + " is typing...";
+      }
+    });
+
+    socket.on("update users list", (currentUsers) =>{
+      for(let i = 0; i<currentUsers.length; i++){
+        console.log(currentUsers.length)
+        let li = document.createElement("li");
+        li.innerHTML = "<li>"+currentUsers[i]+"</li>"
+        document.getElementById("current-users").appendChild(li);
+      }
+      getNumberOfOnlineUsers();
+    });
+  </script>
+
+  <script>
+    function enterSubmit(event){
+      if(event.key === "Enter"){
+        msgSubmit();
+        return;
+      }
+    }
+  </script>
+  
+  <body onload="init();">
+    <ul id="messages"></ul>
+    
+    <form id="chat-form" action="" onkeypress="return enterSubmit(event)">
+      <input id="chattextbox" oninput="" autocomplete="off" />
+      <button type="button" onclick="msgSubmit()">Send</button> 
+      <!--<button type="submit" onclick="test()">Send</button>-->
+    </form>
+    <div id="typing-div"></div>
+    <ul class="current-users" id="current-users"><span id="current-users-onlineusers" style="font-weight: bold">Online Users</span></ul>
+  </body>
+</html>
