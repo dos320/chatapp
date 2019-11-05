@@ -1,12 +1,57 @@
-
+html{
+  background-color: rgb(96, 228, 240);
+  font-family: 'Segoe UI';
+}
 ul{
   list-style-type: none;
-  font-family: Helvetica;
   padding-left: 0;
+  height: 50%;
+  width: 50%;
+  overflow-y: auto;
+  overflow-wrap: break-word;
+  
+}
+.msg-username{
+  font-weight: bold;
+  color: red;
+}
+.msg-time{
+  font-weight: lighter;
+  font-style: italic;
+  font-size: 12px;
+}
+.typing-div{
+  font-size: 8px;
+}
+.current-users{
+  position: absolute;
+  float: right;
 }
 
-li{
-  list-style-type: none;
-  font-family: Helvetica;
-  padding-left: 0;
+.connection-message{
+  font-style: italic;
+  font-size: 12px;
+}
+
+.chat-form-button{
+  background-color: white;
+  border: 1px solid white;
+  border-radius: 12px;
+  padding: 5px;
+  transition: background-color 0.25s;
+}
+
+.chat-form-button:hover{
+  background-color: rgb(222,222,222)
+}
+
+.chat-form-button:active{
+  background-color: rgb(168, 167, 167)
+}
+
+
+.chat-form-textbox{
+  padding: 5px;
+  border: 1px solid white;
+  border-radius: 12px;
 }
