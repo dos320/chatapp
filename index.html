@@ -2,12 +2,14 @@
   <head>
     <link rel="stylesheet" href="styles.css">
   </head>
+  
   <script src="/socket.io/socket.io.js"></script>
   <script>
     function init(){
       handleTextInput();
       preventEnterRefresh();
     }
+
   </script>
   <!-- init scripts -->
   <script>
@@ -114,19 +116,7 @@
     let socket = io();
     let socketString = "";
     socket.on("chat message", function(msg, newUser) {
-      let ul = document.getElementById("messages");
-      let li = document.createElement("li");
-      let currentTime = new Date().toLocaleTimeString();
-      console.log(currentTime);
-      li.innerHTML += "<li><span class=\"msg-time\">" + currentTime + " </span></br><span class=\"msg-username\">" + (newUser.name ? newUser.name : newUser.id) +":</span><span class=\"msg-msg\"> " + msg + "</span></li>"
-      //li.append(socketID + ": ");
-      //li.append(msg);
-      //li.style.cssText use a ternary operator or something to alternate this between two different colors
-      // work on the rest of the css tmrw
-      ul.appendChild(li);
-
-      // scroll to bottom of the element
-      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight - document.getElementById("messages").clientHeight;
+      generateUserMessage(msg, newUser);
     });
     
     socket.on("typing", function(newUser, currentTypers){
@@ -201,27 +191,80 @@
     });
 
     socket.on("user join", (newUser) => {
-      console.log("user joined");
-      let li = document.createElement("li");
-      let currentTime = new Date().toLocaleTimeString();
-      li.innerHTML = "<li class=\"connection-message\"><span class=\"msg-time\">" + currentTime + " </span></br>"+(newUser.name ? newUser.name : newUser.id)+ " has connected. </li>"
-      document.getElementById("messages").appendChild(li);
+      generateUserJoin(newUser);
     })
 
     socket.on("user leave", (newUser) => {
-      let li = document.createElement("li");
-      let currentTime = new Date().toLocaleTimeString();
-      li.innerHTML = "<li class=\"connection-message\"><span class=\"msg-time\">" + currentTime + " </span></br>"+(newUser.name ? newUser.name : newUser.id)+ " has disconnected. </li>"
-      document.getElementById("messages").appendChild(li);
+      generateUserLeave(newUser);
     })
 
     socket.on("user changed name", (newUser)=> {
-      let li = document.createElement("li");
-      let currentTime = new Date().toLocaleTimeString();
-      li.innerHTML = "<li class=\"connection-message\"><span class=\"msg-time\">" + currentTime + " </span></br>" + newUser.id + " has changed their name to " + newUser.name + ".</li>"
-      document.getElementById("messages").appendChild(li);
+      generateUserChangedName(newUser);
     })
 
+    socket.on("send chat history", (chatHistory)=>{
+      // chatHistory should be ordered from oldest to newest
+      for (const element of chatHistory){
+        switch(element.event){
+          case "user join":
+            generateUserJoin(element.newUser, element.time);
+            break;
+          case "user leave":
+            generateUserLeave(element.newUser, element.time);
+            break;
+          case "chat message":
+            generateUserMessage(element.msg, element.newUser, element.time);
+            break;
+          case "user changed name":
+            generateUserChangedName(element.newUser, element.time);
+            break;
+        }
+      }
+    })
+  </script>
+
+  <!--helper functions for generating text-->
+  <script>
+    let generateUserJoin = (newUser, time=0)=>{
+      console.log("user joined");
+      let li = document.createElement("li");
+      let currentTime = new Date().toLocaleTimeString();
+      li.innerHTML = "<li class=\"connection-message\"><span class=\"msg-time\">" + (time===0 ? currentTime : time)+ " </span></br>"+(newUser.name ? newUser.name : newUser.id)+ " has connected. </li>"
+      document.getElementById("messages").appendChild(li);
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight - document.getElementById("messages").clientHeight;
+    }
+
+    let generateUserLeave = (newUser, time=0)=>{
+      let li = document.createElement("li");
+      let currentTime = new Date().toLocaleTimeString();
+      li.innerHTML = "<li class=\"connection-message\"><span class=\"msg-time\">" + (time===0 ? currentTime : time) + " </span></br>"+(newUser.name ? newUser.name : newUser.id)+ " has disconnected. </li>"
+      document.getElementById("messages").appendChild(li);
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight - document.getElementById("messages").clientHeight;
+    }
+
+    let generateUserChangedName = (newUser, time=0)=>{
+      let li = document.createElement("li");
+      let currentTime = new Date().toLocaleTimeString();
+      li.innerHTML = "<li class=\"connection-message\"><span class=\"msg-time\">" + (time===0 ? currentTime : time) + " </span></br>" + newUser.id + " has changed their name to " + newUser.name + ".</li>"
+      document.getElementById("messages").appendChild(li);
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight - document.getElementById("messages").clientHeight;
+    }
+
+    let generateUserMessage = (msg, newUser, time=0)=>{
+      let ul = document.getElementById("messages");
+      let li = document.createElement("li");
+      let currentTime = new Date().toLocaleTimeString();
+      console.log(currentTime);
+      li.innerHTML += "<li><span class=\"msg-time\">" + (time===0 ? currentTime : time) + " </span></br><span class=\"msg-username\">" + (newUser.name ? newUser.name : newUser.id) +":</span><span class=\"msg-msg\"> " + msg + "</span></li>"
+      //li.append(socketID + ": ");
+      //li.append(msg);
+      //li.style.cssText use a ternary operator or something to alternate this between two different colors
+      // work on the rest of the css tmrw
+      ul.appendChild(li);
+
+      // scroll to bottom of the element
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight - document.getElementById("messages").clientHeight;
+    }
   </script>
 
   <script>

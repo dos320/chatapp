@@ -4,6 +4,7 @@ const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 let currentTypers = [];
 let currentUsers = [];
+let chatHistory = [];
 
 app.use(express.static(__dirname));
 
@@ -27,9 +28,11 @@ io.on("connection", function(socket) {
   //currentUsers.push(socketID);
   
   // this breaks every reference to the currentUsers array, use currentUsers.map(function(e){e.id}).indexOf("text") to fix
-  currentUsers.push(newUser) 
+  currentUsers.push(newUser);
+  chatHistory.push({event:"user join", newUser: newUser, time: new Date().toLocaleTimeString()}); 
   io.emit("update users list", currentUsers);
   io.emit("user join", newUser);
+  io.emit("send chat history", chatHistory);
 
   socket.on("disconnect", () => {
     // if user leaves while typing, gets rid of their name in typing div
@@ -45,6 +48,7 @@ io.on("connection", function(socket) {
       currentTypers.splice(currentTypers.map(function(e){return e.id}).indexOf(socketID)); //removes the wrong user on disconnect???
       console.log(currentTypers.length)
     }
+    chatHistory.push({event:"user leave", newUser:newUser, time:new Date().toLocaleTimeString()});
     io.emit("not typing", newUser, currentTypers);
     io.emit("update users list", currentUsers);
     io.emit("user leave", newUser);
@@ -53,6 +57,7 @@ io.on("connection", function(socket) {
   socket.on("chat message", function(msg) {
     let socketID = socket.id
     console.log("message from " + socketID + ": " + msg);
+    chatHistory.push({event: "chat message", msg:msg, newUser:newUser, time: new Date().toLocaleTimeString()})
     io.emit("chat message", msg, newUser);
   });
 
@@ -88,6 +93,7 @@ io.on("connection", function(socket) {
     if(socketIndex !== -1){
       // will find the user with the correct socketID, and swap its name to "uname"
       currentUsers[socketIndex].name = uname;
+      chatHistory.push({event:"user changed name", newUser: currentUsers[socketIndex], time: new Date().toLocaleTimeString()})
       io.emit("user changed name", currentUsers[socketIndex]);
     }
   })
