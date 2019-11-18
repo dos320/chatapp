@@ -61,19 +61,31 @@
           socket.emit("not typing");
           console.log(document.getElementById("chattextbox").value);
           document.getElementById("chattextbox").value = ""
-          
     }
+    // code that is triggered whenever choosing a room
+    function roomSelect(roomName){
+        console.log(roomName);
+        if(!socket){
+          let socket = io();
+        }
+        
+        //document.getElementById()
+        socket.emit("room select", roomName);
+        return;
+      }
   </script>
 
   <script>
     function handleTextboxCommand(){
       let element = document.getElementById("chattextbox");
+      let commands = ["/help","/setname"]
       // changing username
       if(element.value.includes("/setname")){
         if(element.value.split(" ").length <= 1){
           let li = document.createElement("li");
-          li.innerHTML = "<li class=\"connection-message\">INFO: /setname requires a name to set to (ex. /setname myUsername)</li>";
+          li.innerHTML = "<li class=\"connection-message\"><strong>INFO: /setname requires a name to set to (ex. /setname myUsername)</strong></li>";
           document.getElementById("messages").appendChild(li);
+          
         }else{
           let tempArray = element.value.split(" ");
           tempArray.shift();
@@ -82,19 +94,31 @@
           //console.log(tempStr);
           socket.emit("change username", tempStr); //tempstr is the username
         }
+        
+      }else if(element.value.includes("/help")){
+        let li = document.createElement("li");
+        let i = 0;
+        li.innerHTML = "<li class=\"connection-message\"><strong>INFO: Current commands:"; 
+        for (let command of commands){
+          li.innerHTML += (i===commands.length-1 ? command : command + ", ");
+          i = i + 1;
+        }
+        li.innerHTML += "</strong></li>"
+        document.getElementById("messages").appendChild(li);
       }else{
         let li = document.createElement("li");
-        li.innerHTML = "<li class=\"connection-message\">INFO: Invalid command.</li>"; // can prob create an innerhtml making function
+        li.innerHTML = "<li class=\"connection-message\"><strong>INFO: Invalid command.</strong></li>"; // can prob create an innerhtml making function
         document.getElementById("messages").appendChild(li);
       }
       socket.emit("not typing");
       element.value = "" // clear textbox
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight - document.getElementById("messages").clientHeight;
     }
   </script>
 
   <script>
     function handleTextInput(){ //this creates multiple listeners, fix this 
-      var typingTimer;
+      let typingTimer;
       if(!socket){
           let socket = io();
       }
@@ -202,9 +226,13 @@
       generateUserChangedName(newUser);
     })
 
+    socket.on("room join", (newUser, roomName)=>{
+      generateRoomJoinMessage(newUser, roomName)
+    })
+
     socket.on("send chat history", (chatHistory)=>{
       // chatHistory should be ordered from oldest to newest
-      for (const element of chatHistory){
+      for (let element of chatHistory){
         switch(element.event){
           case "user join":
             generateUserJoin(element.newUser, element.time);
@@ -220,6 +248,23 @@
             break;
         }
       }
+    })
+
+    socket.on("update room user counts", (currentRooms)=>{
+      for (let room of currentRooms){
+        document.getElementById(room.name + "-usercount").innerHTML = room.currentUsers.length + (room.currentUsers.length === 1 ? " user " : " users ")
+      }
+    })
+
+    socket.on("motd", (str)=>{
+      let li = document.createElement("li");
+      li.innerHTML = "<li class=\"connection-message\"><strong>"+str+"</strong></li>"
+      document.getElementById("messages").appendChild(li);
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight - document.getElementById("messages").clientHeight;
+    })
+
+    socket.on("update room name", (roomName)=>{
+      document.getElementById("channel-name-header").innerHTML = "#"+roomName;
     })
   </script>
 
@@ -265,6 +310,16 @@
       // scroll to bottom of the element
       document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight - document.getElementById("messages").clientHeight;
     }
+
+    let generateRoomJoinMessage = (newUser, roomName, time=0)=>{
+      let li = document.createElement("li");
+      let currentTime = new Date().toLocaleTimeString();
+      li.innerHTML = "<li class=\"connection-message\"><span class=\"msg-time\">" + (time===0 ? currentTime : time) + " </span></br>" + (newUser.name ? newUser.name : newUser.id) + " has joined room " + roomName + ".</li>"
+      document.getElementById("messages").appendChild(li);
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight - document.getElementById("messages").clientHeight;
+
+    }
+
   </script>
 
   <script>
@@ -277,14 +332,33 @@
   </script>
   
   <body onload="init();">
-    <ul id="messages"></ul>
-    
-    <form id="chat-form" action="" onkeypress="return enterSubmit(event)">
-      <input class="chat-form-textbox" id="chattextbox" oninput="" autocomplete="off" />
-      <button class="chat-form-button" type="button" onclick="msgSubmit()">Send</button> 
-      <!--<button type="submit" onclick="test()">Send</button>-->
-    </form>
-    <div id="typing-div"></br></div>
-    <ul class="current-users" id="current-users"><span id="current-users-onlineusers" style="font-weight: bold">Online Users</span></ul>
+    <h1>chatapp</h1>
+    <div id="message-div" class="message-div">
+      <h3 id="channel-name-header" class="channel-name-header">test</h1>
+      <ul id="messages" class="messages"></ul>
+      
+      <form id="chat-form" action="" onkeypress="return enterSubmit(event)">
+        <input class="chat-form-textbox" id="chattextbox" oninput="" autocomplete="off" />
+        <button class="chat-form-button" type="button" onclick="msgSubmit()">Send</button> 
+        <!--<button type="submit" onclick="test()">Send</button>-->
+      </form>
+      <div id="typing-div"></br></div>
+    </div>
+
+    <div class="info-div">
+      <div class="current-users">
+        <ul class="current-users-ul" id="current-users"><span id="current-users-onlineusers" style="font-weight: bold">Online Users</span></ul>
+      </div>
+      
+      <div id="room-div" class="room-div">
+        
+        <ul id="room-div-ul" class="room-div-ul">
+          <span style="font-weight: bold">Rooms</span>
+          <li id="room-1" name="General">[General] Pop: <span id="General-usercount"></span><a class="room-connect" onclick="return roomSelect('General')">Connect</a></li>
+          <li id="room-2" name="Other">[Other] Pop: <span id="Other-usercount"></span><a class="room-connect" onclick="return roomSelect('Other')">Connect</a></li>
+        </ul>
+      </div>
+   </div>
+  
   </body>
 </html>
