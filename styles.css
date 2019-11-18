@@ -2,30 +2,52 @@ html{
   background-color: rgb(96, 228, 240);
   font-family: 'Segoe UI';
 }
-ul{
+
+.message-div{
+  float: left;
+}
+
+.messages{
   list-style-type: none;
   padding-left: 0;
   height: 50%;
-  width: 50%;
+  width: 250px;
   overflow-y: auto;
   overflow-wrap: break-word;
-  
 }
+
 .msg-username{
   font-weight: bold;
   color: red;
 }
+
 .msg-time{
   font-weight: lighter;
   font-style: italic;
   font-size: 12px;
 }
+
 .typing-div{
   font-size: 8px;
 }
+
 .current-users{
-  position: absolute;
+  padding-left: 20px;
   float: right;
+}
+
+.current-users current-users-ul{
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  padding-left: 20px;
+}
+
+.room-div{
+  float: right;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  padding-right: 58px;
+  /*word-break: break-all;*/
 }
 
 .connection-message{
@@ -55,3 +77,15 @@ ul{
   border: 1px solid white;
   border-radius: 12px;
 }
+
+.room-connect{
+  border: 1px solid rgb(168, 167, 167);
+  background-color: white;
+  transition: background-color 0.25s;
+}
+
+.room-connect:hover{
+  cursor: pointer;
+  background-color: rgb(222,222,222);
+}
+
