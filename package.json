@@ -4,7 +4,7 @@
   "description": "Simple Node Sandbox",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon src/index.js localhost 3000"
+    "start": "web: node src/index.js localhost 3000"
   },
   "dependencies": {
     "express": "4.17.1",
